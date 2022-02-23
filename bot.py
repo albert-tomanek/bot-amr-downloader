@@ -38,13 +38,15 @@ def fetch_yt_link(update: Update, context: CallbackContext):
     link = update.effective_message.text
     if 'youtube.com' in link:
         id = re.search('v=([0-9a-zA-Z_\-]{11})', link).group(1)
+        d = Downloader(link)
     elif 'youtu.be' in link:
         id = re.search('([0-9a-zA-Z_\-]{11})$', link).group(1)
+        d = Downloader(link)
     else:
-        update.effective_chat.send_message("That's not a valid YouTube link :-(")
-        return ConversationHandler.END
+        # Link is actually a search phrase
+        id = ''.join(c if c.isalnum() else '_' for c in link)
+        d = Downloader(link, search=True)
 
-    d = Downloader(link)
     update.effective_chat.send_message("Working...")
     d.get_yt_url()
 
@@ -65,7 +67,7 @@ dispatcher.add_handler(ConversationHandler(
     ],
     states={
         'requested-type': [CallbackQueryHandler(ask_link)],
-        'requested-yt-link': [MessageHandler(Filters.entity('text_link') | Filters.entity('url'), fetch_yt_link)],
+        'requested-yt-link': [MessageHandler(Filters.text, fetch_yt_link)],
         'requested-file-link': [MessageHandler(Filters.entity('text_link') | Filters.entity('url'), fetch_file_link)],
     },
     fallbacks=[],
